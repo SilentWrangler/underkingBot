@@ -23,8 +23,8 @@ class CharacterExtension(Extension):
     )
     async def roll(self, ctx: SlashContext, formula: str):
         try:
-            result = int(dice.roll(formula))
-            await ctx.send(f'{formula}: {result}')
+            result = dice.roll(formula)
+            await ctx.send(f'{formula}: {result} ')
         except dice.DiceBaseException as e:
             await ctx.send(e.pretty_print())
 
@@ -51,10 +51,11 @@ class CharacterExtension(Extension):
             options = ['-', 'L']
             options.extend([str(i) for i in range(1, 21)])
             components = StringSelectMenu(*options)
-            await modal_ctx.send(embeds=[to_embed(item)], components=components)
+            await modal_ctx.send(content = "", embeds=[to_embed(item)], components=components)
             comp = await self.bot.wait_for_component()
             item.bulk = item.txt_to_bulk(comp.ctx.values[0])
             await sync_to_async(item.save, thread_sensitive=True)()
+
         except ValueError as ex:
             await modal_ctx.send('Уровень должен быть числом!', ephemeral=True)
 
