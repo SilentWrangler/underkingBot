@@ -1,0 +1,287 @@
+[[package]]
+name = "aiohttp"
+version = "3.8.5"
+description = "Async http client/server framework (asyncio)"
+category = "main"
+optional = false
+python-versions = ">=3.6"
+
+[package.dependencies]
+aiosignal = ">=1.1.2"
+async-timeout = ">=4.0.0a3,<5.0"
+attrs = ">=17.3.0"
+charset-normalizer = ">=2.0,<4.0"
+frozenlist = ">=1.1.1"
+multidict = ">=4.5,<7.0"
+yarl = ">=1.0,<2.0"
+
+[package.extras]
+speedups = ["aiodns", "brotli", "cchardet"]
+
+[[package]]
+name = "aiosignal"
+version = "1.3.1"
+description = "aiosignal: a list of registered asynchronous callbacks"
+category = "main"
+optional = false
+python-versions = ">=3.7"
+
+[package.dependencies]
+frozenlist = ">=1.1.0"
+
+[[package]]
+name = "asgiref"
+version = "3.7.2"
+description = "ASGI specs, helper code, and adapters"
+category = "main"
+optional = false
+python-versions = ">=3.7"
+
+[package.dependencies]
+typing-extensions = {version = ">=4", markers = "python_version < \"3.11\""}
+
+[package.extras]
+tests = ["pytest", "pytest-asyncio", "mypy (>=0.800)"]
+
+[[package]]
+name = "async-timeout"
+version = "4.0.3"
+description = "Timeout context manager for asyncio programs"
+category = "main"
+optional = false
+python-versions = ">=3.7"
+
+[[package]]
+name = "attrs"
+version = "23.1.0"
+description = "Classes Without Boilerplate"
+category = "main"
+optional = false
+python-versions = ">=3.7"
+
+[package.extras]
+cov = ["attrs", "coverage[toml] (>=5.3)"]
+dev = ["attrs", "pre-commit"]
+docs = ["furo", "myst-parser", "sphinx", "sphinx-notfound-page", "sphinxcontrib-towncrier", "towncrier", "zope-interface"]
+tests = ["attrs", "zope-interface"]
+tests-no-zope = ["cloudpickle", "hypothesis", "mypy (>=1.1.1)", "pympler", "pytest-mypy-plugins", "pytest-xdist", "pytest (>=4.3.0)"]
+
+[[package]]
+name = "charset-normalizer"
+version = "3.2.0"
+description = "The Real First Universal Charset Detector. Open, modern and actively maintained alternative to Chardet."
+category = "main"
+optional = false
+python-versions = ">=3.7.0"
+
+[[package]]
+name = "dice"
+version = "4.0.0"
+description = "A library for parsing and evaluating dice notation"
+category = "main"
+optional = false
+python-versions = ">=3.7"
+
+[package.dependencies]
+pyparsing = ">=2.4.1"
+
+[[package]]
+name = "discord-py-interactions"
+version = "5.9.2"
+description = "Easy, simple, scalable and modular: a Python API wrapper for interactions."
+category = "main"
+optional = false
+python-versions = ">=3.10"
+
+[package.dependencies]
+aiohttp = "*"
+attrs = ">=22.1"
+discord-typings = ">=0.5.1"
+emoji = "*"
+tomli = "*"
+
+[package.extras]
+all = ["PyNaCl (>=1.5.0,<1.6)", "aiodns", "orjson", "brotli", "faust-cchardet", "sentry-sdk", "jurigged", "aioconsole (>=0.6.0)", "uvloop"]
+console = ["aioconsole (>=0.6.0)"]
+dev = ["pytest", "pytest-asyncio", "pytest-cov", "python-dotenv", "typeguard", "PyNaCl (>=1.5.0,<1.6)", "aiodns", "orjson", "brotli", "faust-cchardet", "sentry-sdk", "jurigged", "aioconsole (>=0.6.0)", "mkdocs-autorefs", "mkdocs-awesome-pages-plugin", "mkdocs-material", "mkdocstrings-python", "mkdocs-minify-plugin", "mkdocs-git-committers-plugin-2", "mkdocs-git-revision-date-localized-plugin", "griffe (==0.25)", "pre-commit", "uvloop"]
+docs = ["PyNaCl (>=1.5.0,<1.6)", "aiodns", "orjson", "brotli", "faust-cchardet", "sentry-sdk", "jurigged", "aioconsole (>=0.6.0)", "mkdocs-autorefs", "mkdocs-awesome-pages-plugin", "mkdocs-material", "mkdocstrings-python", "mkdocs-minify-plugin", "mkdocs-git-committers-plugin-2", "mkdocs-git-revision-date-localized-plugin", "griffe (==0.25)", "uvloop"]
+jurigged = ["jurigged"]
+sentry = ["sentry-sdk"]
+speedup = ["aiodns", "orjson", "brotli", "faust-cchardet", "uvloop"]
+tests = ["pytest", "pytest-asyncio", "pytest-cov", "python-dotenv", "typeguard"]
+voice = ["PyNaCl (>=1.5.0,<1.6)"]
+
+[[package]]
+name = "discord-typings"
+version = "0.6.0"
+description = "Python typings of payloads that Discord sends"
+category = "main"
+optional = false
+python-versions = ">=3.7"
+
+[package.dependencies]
+typing_extensions = ">=4.3,<5"
+
+[[package]]
+name = "django"
+version = "4.2.4"
+description = "A high-level Python web framework that encourages rapid development and clean, pragmatic design."
+category = "main"
+optional = false
+python-versions = ">=3.8"
+
+[package.dependencies]
+asgiref = ">=3.6.0,<4"
+sqlparse = ">=0.3.1"
+tzdata = {version = "*", markers = "sys_platform == \"win32\""}
+
+[package.extras]
+argon2 = ["argon2-cffi (>=19.1.0)"]
+bcrypt = ["bcrypt"]
+
+[[package]]
+name = "emoji"
+version = "2.8.0"
+description = "Emoji for Python"
+category = "main"
+optional = false
+python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
+
+[package.extras]
+dev = ["pytest", "coverage", "coveralls"]
+
+[[package]]
+name = "frozenlist"
+version = "1.4.0"
+description = "A list-like structure which implements collections.abc.MutableSequence"
+category = "main"
+optional = false
+python-versions = ">=3.8"
+
+[[package]]
+name = "idna"
+version = "3.4"
+description = "Internationalized Domain Names in Applications (IDNA)"
+category = "main"
+optional = false
+python-versions = ">=3.5"
+
+[[package]]
+name = "multidict"
+version = "6.0.4"
+description = "multidict implementation"
+category = "main"
+optional = false
+python-versions = ">=3.7"
+
+[[package]]
+name = "pillow"
+version = "10.0.0"
+description = "Python Imaging Library (Fork)"
+category = "main"
+optional = false
+python-versions = ">=3.8"
+
+[package.extras]
+docs = ["furo", "olefile", "sphinx (>=2.4)", "sphinx-copybutton", "sphinx-inline-tabs", "sphinx-removed-in", "sphinxext-opengraph"]
+tests = ["check-manifest", "coverage", "defusedxml", "markdown2", "olefile", "packaging", "pyroma", "pytest", "pytest-cov", "pytest-timeout"]
+
+[[package]]
+name = "pyparsing"
+version = "3.1.1"
+description = "pyparsing module - Classes and methods to define and execute parsing grammars"
+category = "main"
+optional = false
+python-versions = ">=3.6.8"
+
+[package.extras]
+diagrams = ["railroad-diagrams", "jinja2"]
+
+[[package]]
+name = "python-dotenv"
+version = "1.0.0"
+description = "Read key-value pairs from a .env file and set them as environment variables"
+category = "main"
+optional = false
+python-versions = ">=3.8"
+
+[package.extras]
+cli = ["click (>=5.0)"]
+
+[[package]]
+name = "sqlparse"
+version = "0.4.4"
+description = "A non-validating SQL parser."
+category = "main"
+optional = false
+python-versions = ">=3.5"
+
+[package.extras]
+dev = ["flake8", "build"]
+doc = ["sphinx"]
+test = ["pytest", "pytest-cov"]
+
+[[package]]
+name = "tomli"
+version = "2.0.1"
+description = "A lil' TOML parser"
+category = "main"
+optional = false
+python-versions = ">=3.7"
+
+[[package]]
+name = "typing-extensions"
+version = "4.7.1"
+description = "Backported and Experimental Type Hints for Python 3.7+"
+category = "main"
+optional = false
+python-versions = ">=3.7"
+
+[[package]]
+name = "tzdata"
+version = "2023.3"
+description = "Provider of IANA time zone data"
+category = "main"
+optional = false
+python-versions = ">=2"
+
+[[package]]
+name = "yarl"
+version = "1.9.2"
+description = "Yet another URL library"
+category = "main"
+optional = false
+python-versions = ">=3.7"
+
+[package.dependencies]
+idna = ">=2.0"
+multidict = ">=4.0"
+
+[metadata]
+lock-version = "1.1"
+python-versions = "^3.10"
+content-hash = "c8a77d1b462b3214c1c366b616fb148e27e58b2fa5fe30674a66ff19912ba68a"
+
+[metadata.files]
+aiohttp = []
+aiosignal = []
+asgiref = []
+async-timeout = []
+attrs = []
+charset-normalizer = []
+dice = []
+discord-py-interactions = []
+discord-typings = []
+django = []
+emoji = []
+frozenlist = []
+idna = []
+multidict = []
+pillow = []
+pyparsing = []
+python-dotenv = []
+sqlparse = []
+tomli = []
+typing-extensions = []
+tzdata = []
+yarl = []
