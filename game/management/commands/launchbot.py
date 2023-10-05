@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from underkingbot.settings import DISCORD_TOKEN
+from underkingbot.settings import DISCORD_TOKEN, DISCORD_DEBUG_SCOPE
 import interactions
 
 
@@ -10,6 +10,6 @@ class Command(BaseCommand):
         client = interactions.Client(
             token=DISCORD_TOKEN,
             intents=interactions.Intents.DEFAULT,
-            debug_scope=462152304167223316)
+            debug_scope=DISCORD_DEBUG_SCOPE)
         client.load_extension('bot')
         client.start()

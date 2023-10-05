@@ -126,3 +126,4 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 DISCORD_TOKEN = os.getenv('DISCORD_TOKEN')
+DISCORD_DEBUG_SCOPE = os.getenv('DISCORD_DEBUG_SCOPE')
