@@ -38,6 +38,13 @@ class CharacterExtension(Extension):
     async def create(self, ctx: SlashContext):
         await ctx.send('Выберите сущность для создания!')
 
+    @interactions.slash_command(
+        name='edit',
+        group_description='Изменение записи в БД'
+    )
+    async def edit(self, ctx: SlashContext):
+        await ctx.send('Выберите сущность для создания!')
+
     @create.subcommand(
         sub_cmd_name='item'
     )
@@ -48,11 +55,41 @@ class CharacterExtension(Extension):
         opt_type=OptionType.ATTACHMENT
     )
     async def create_item(self, ctx: SlashContext, image: Attachment = None):
-        modal = name_description_modal('Создать вещь', effect=True)
+        await self.modify_or_create_item(ctx, image)
+
+    @edit.subcommand(
+        sub_cmd_name='item'
+    )
+    @slash_option(
+        name='name',
+        description='Имя предмета',
+        required=True,
+        opt_type=OptionType.STRING,
+        autocomplete=True
+    )
+    @slash_option(
+        name='image',
+        description='Новое изображение предмета',
+        required=False,
+        opt_type=OptionType.ATTACHMENT
+    )
+    async def edit_item(self, ctx: SlashContext, name: str, image: Attachment = None):
+        item = await sync_to_async(Item.objects.get)(name=name)
+        await self.modify_or_create_item(ctx, image, item)
+
+    async def modify_or_create_item(self,ctx: SlashContext, image: Attachment = None, item: Item = None):
+        if item is None:
+            item = Item()
+            modal = name_description_modal('Создать вещь', effectable=True)
+        else:
+            modal = name_description_modal('Изменить вещь', effectable=True
+                                           , name=item.name, description=item.description,
+                                           level=str(item.level),effect=item.effect)
+
         await ctx.send_modal(modal)
         modal_ctx = await self.bot.wait_for_modal(modal)
         try:
-            item = Item()
+
             if image is not None:
                 item.image_url = image.url
             item.name = modal_ctx.responses["name"]
@@ -75,7 +112,6 @@ class CharacterExtension(Extension):
         except ValueError as ex:
             print(ex)
             await modal_ctx.send('Уровень должен быть числом!', ephemeral=True)
-
     @create.subcommand(
         sub_cmd_name='character'
     )
@@ -86,12 +122,40 @@ class CharacterExtension(Extension):
         opt_type=OptionType.ATTACHMENT
     )
     async def create_character(self, ctx: SlashContext, image: Attachment = None):
-        modal = name_description_modal('Создать персонажа')
+        await self.modify_or_create_item(ctx, image)
+
+    @edit.subcommand(
+        sub_cmd_name='character'
+    )
+    @slash_option(
+        name='name',
+        description='Имя персонажа',
+        required=True,
+        opt_type=OptionType.STRING,
+        autocomplete=True
+    )
+    @slash_option(
+        name='image',
+        description='Новое изображение персонажа',
+        required=False,
+        opt_type=OptionType.ATTACHMENT
+    )
+    async def edit_character(self, ctx: SlashContext, name: str, image: Attachment = None):
+        character = await sync_to_async(Character.objects.get)(name=name)
+        await self.modify_or_create_character(ctx, image, character)
+
+    async def modify_or_create_character(self, ctx: SlashContext, image:Attachment=None, character = None):
+        if character is None:
+            character = Character()
+            modal = name_description_modal('Создать персонажа')
+        else:
+            modal = name_description_modal('Изменить персонажа', name=character.name,
+                                           description=character.description, level=str(character.level))
         await ctx.send_modal(modal)
         modal_ctx = await self.bot.wait_for_modal(modal)
 
         try:
-            character = Character()
+
             if image is not None:
                 character.image_url = image.url
             character.discord_id = int(ctx.author_id)
@@ -175,6 +239,7 @@ class CharacterExtension(Extension):
         await ctx.send(embeds=[to_embed(character)])
 
     @view_character.autocomplete("name")
+    @edit_character.autocomplete('name')
     async def vc_autocomplete(self, ctx: AutocompleteContext):
         search = ctx.input_text
 
@@ -198,6 +263,7 @@ class CharacterExtension(Extension):
         await ctx.send(embeds=[to_embed(item)])
 
     @view_item.autocomplete('name')
+    @edit_item.autocomplete('name')
     async def vi_autocomplete(self, ctx: AutocompleteContext):
         search = ctx.input_text
 
@@ -206,13 +272,13 @@ class CharacterExtension(Extension):
 
         await ctx.send(choices=choices)
 
-def name_description_modal(title, leleved=True, effect=False):
-    components = [ShortText(label='Имя', custom_id='name', max_length=256),
-                  ParagraphText(label='Описание', custom_id='description', max_length=2000)]
+def name_description_modal(title, leleved=True, effectable=False, **defaults):
+    components = [ShortText(label='Имя', custom_id='name', max_length=256, value=defaults.get('name', None)),
+                  ParagraphText(label='Описание', custom_id='description', max_length=2000, value=defaults.get('description', None))]
     if leleved:
-        components.append(ShortText(label='Уровень', custom_id='level'))
-    if effect:
-        components.append(ShortText(label='Эффект', custom_id='effect'))
+        components.append(ShortText(label='Уровень', custom_id='level', value=defaults.get('level', None)))
+    if effectable:
+        components.append(ShortText(label='Эффект', custom_id='effect', value=defaults.get('effect', None)))
     modal = Modal(
         *components,
         title=title,
