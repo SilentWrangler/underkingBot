@@ -122,7 +122,7 @@ class CharacterExtension(Extension):
         opt_type=OptionType.ATTACHMENT
     )
     async def create_character(self, ctx: SlashContext, image: Attachment = None):
-        await self.modify_or_create_item(ctx, image)
+        await self.modify_or_create_character(ctx, image, set_author=True)
 
     @edit.subcommand(
         sub_cmd_name='character'
@@ -144,7 +144,7 @@ class CharacterExtension(Extension):
         character = await sync_to_async(Character.objects.get)(name=name)
         await self.modify_or_create_character(ctx, image, character)
 
-    async def modify_or_create_character(self, ctx: SlashContext, image:Attachment=None, character = None):
+    async def modify_or_create_character(self, ctx: SlashContext, image:Attachment=None, character = None, set_author = False):
         if character is None:
             character = Character()
             modal = name_description_modal('Создать персонажа')
@@ -158,7 +158,8 @@ class CharacterExtension(Extension):
 
             if image is not None:
                 character.image_url = image.url
-            character.discord_id = int(ctx.author_id)
+            if set_author:
+                character.discord_id = int(ctx.author_id)
             character.name = modal_ctx.responses["name"]
             character.description = modal_ctx.responses["description"]
             character.level = int(modal_ctx.responses['level'])
