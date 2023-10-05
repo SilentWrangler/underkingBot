@@ -1,8 +1,11 @@
 import interactions
 import dice
 from asgiref.sync import sync_to_async
-from interactions import Extension, OptionType, Modal, ShortText, ParagraphText, SlashContext, Embed, StringSelectMenu
-from interactions.api.events import Startup
+from interactions import (Extension, OptionType, Modal, ShortText,
+                          ParagraphText, SlashContext, Embed, StringSelectMenu,
+                          StringSelectOption, ActionRow, Button, ButtonStyle, Attachment, slash_option,
+                          AutocompleteContext)
+from interactions.api.events import Startup, Component
 
 from game.models import Item, Describable, Character
 
@@ -38,47 +41,178 @@ class CharacterExtension(Extension):
     @create.subcommand(
         sub_cmd_name='item'
     )
-    async def create_item(self, ctx: SlashContext):
-        modal = name_description_modal('Создать вещь')
+    @slash_option(
+        name='image',
+        description='Изображение предмета',
+        required=False,
+        opt_type=OptionType.ATTACHMENT
+    )
+    async def create_item(self, ctx: SlashContext, image: Attachment = None):
+        modal = name_description_modal('Создать вещь', effect=True)
         await ctx.send_modal(modal)
         modal_ctx = await self.bot.wait_for_modal(modal)
         try:
             item = Item()
+            if image is not None:
+                item.image_url = image.url
             item.name = modal_ctx.responses["name"]
             item.description = modal_ctx.responses["description"]
             item.level = int(modal_ctx.responses['level'])
-
-            options = ['-', 'L']
-            options.extend([str(i) for i in range(1, 21)])
+            item.effect = modal_ctx.responses['effect']
+            options = [StringSelectOption(label='-', value='-'),
+                       StringSelectOption(label='L', value='L')]
+            options.extend([StringSelectOption(label=str(i), value=str(i)) for i in range(1, 21)])
             components = StringSelectMenu(*options)
-            await modal_ctx.send(content = "", embeds=[to_embed(item)], components=components)
-            comp = await self.bot.wait_for_component()
-            item.bulk = item.txt_to_bulk(comp.ctx.values[0])
+            msg = await modal_ctx.send(content="", embeds=[to_embed(item)], components=components)
+
+            comp = await self.bot.wait_for_component(msg)
+            bulk = comp.ctx.values[0]
+            item.txt_to_bulk(bulk)
+
             await sync_to_async(item.save, thread_sensitive=True)()
+            await comp.ctx.edit_origin(content="", embeds=[to_embed(item)], components=[])
 
         except ValueError as ex:
+            print(ex)
             await modal_ctx.send('Уровень должен быть числом!', ephemeral=True)
 
     @create.subcommand(
         sub_cmd_name='character'
     )
-    async def create_character(self, ctx: SlashContext):
+    @slash_option(
+        name='image',
+        description='Изображение персонажа',
+        required=False,
+        opt_type=OptionType.ATTACHMENT
+    )
+    async def create_character(self, ctx: SlashContext, image: Attachment = None):
         modal = name_description_modal('Создать персонажа')
         await ctx.send_modal(modal)
         modal_ctx = await self.bot.wait_for_modal(modal)
+
         try:
             character = Character()
+            if image is not None:
+                character.image_url = image.url
+            character.discord_id = int(ctx.author_id)
             character.name = modal_ctx.responses["name"]
             character.description = modal_ctx.responses["description"]
             character.level = int(modal_ctx.responses['level'])
+            stats1 = [('strength', 'Сила'), ('dexterity', 'Ловкость'), ('constitution', 'Телосложение')]
+            components = []
+            stat_range = [i for i in range(6, 22, 2)] + [21, 22]
+            for stat_id, stat in stats1:
+                options = [StringSelectOption(label=f'{i}', value=f'{i}') for i in stat_range]
+                components.append(ActionRow(StringSelectMenu(*options, placeholder=stat, custom_id=stat_id)))
+            components.append(ActionRow(Button(label='Далее', custom_id='next', style=ButtonStyle.GREEN)))
+            msg = await modal_ctx.send(content='', embeds=[to_embed(character)], components=components)
+
+            finished = False
+            comp = await self.bot.wait_for_component(msg)
+            first = True
+            while not finished:
+                if first:
+                    first = False
+                else:
+                    comp = await self.bot.wait_for_component(msg)
+
+                if comp.ctx.custom_id == 'next':
+                    finished = True
+                else:
+                    character.__setattr__(comp.ctx.custom_id, int(comp.ctx.values[0]))
+                    await comp.ctx.edit_origin(content="",
+                                               embeds=[to_embed(character)], components=components)
+
+            stats2 = [('intelligence', 'Интеллект'), ('wisdom', 'Мудрость'), ('charisma', 'Харизма')]
+            components = []
+            for stat_id, stat in stats2:
+                options = [StringSelectOption(label=f'{i}', value=f'{i}') for i in stat_range]
+                components.append(ActionRow(StringSelectMenu(*options, placeholder=stat, custom_id=stat_id)))
+            components.append(ActionRow(Button(label='Далее', custom_id='next', style=ButtonStyle.GREEN)))
+            await comp.ctx.edit_origin(content="", embeds=[to_embed(character)], components=components)
+
+            finished = False
+            comp = await self.bot.wait_for_component(msg)
+            first = True
+            while not finished:
+                if first:
+                    first = False
+                else:
+                    comp = await self.bot.wait_for_component(msg)
+
+                if comp.ctx.custom_id == 'next':
+                    finished = True
+                else:
+                    character.__setattr__(comp.ctx.custom_id, int(comp.ctx.values[0]))
+                    await comp.ctx.edit_origin(content="",
+                                               embeds=[to_embed(character)], components=components)
+
+            await comp.ctx.edit_origin(content="", embeds=[to_embed(character)], components=[])
+            await sync_to_async(character.save, thread_sensitive=True)()
 
         except ValueError as ex:
             await modal_ctx.send('Уровень должен быть числом!', ephemeral=True)
-def name_description_modal(title, leleved=True):
+
+    @interactions.slash_command(
+        name='view',
+        group_description='Просмотр записи в БД'
+    )
+    async def view(self, ctx: SlashContext):
+        await ctx.send('Выберите сущность для просмотра!')
+
+    @view.subcommand(
+        sub_cmd_name='character'
+    )
+    @slash_option(
+        name='name',
+        description='Имя персонажа',
+        required=True,
+        opt_type=OptionType.STRING,
+        autocomplete=True
+    )
+    async def view_character(self, ctx: SlashContext, name: str):
+        character = await sync_to_async(Character.objects.get)(name=name)
+        await ctx.send(embeds=[to_embed(character)])
+
+    @view_character.autocomplete("name")
+    async def vc_autocomplete(self, ctx: AutocompleteContext):
+        search = ctx.input_text
+
+        filtered = await sync_to_async(list)(Character.objects.filter(name__icontains=search)[:10])
+        choices = [dict(name=c.name, value=c.name) for c in filtered]
+
+        await ctx.send(choices=choices)
+
+    @view.subcommand(
+        sub_cmd_name='item'
+    )
+    @slash_option(
+        name='name',
+        description='Имя предмета',
+        required=True,
+        opt_type=OptionType.STRING,
+        autocomplete=True
+    )
+    async def view_item(self, ctx: SlashContext, name: str):
+        item = await sync_to_async(Item.objects.get)(name=name)
+        await ctx.send(embeds=[to_embed(item)])
+
+    @view_item.autocomplete('name')
+    async def vi_autocomplete(self, ctx: AutocompleteContext):
+        search = ctx.input_text
+
+        filtered = await sync_to_async(list)(Item.objects.filter(name__icontains=search)[:10])
+        choices = [dict(name=c.name, value=c.name) for c in filtered]
+
+        await ctx.send(choices=choices)
+
+def name_description_modal(title, leleved=True, effect=False):
     components = [ShortText(label='Имя', custom_id='name', max_length=256),
                   ParagraphText(label='Описание', custom_id='description', max_length=2000)]
     if leleved:
         components.append(ShortText(label='Уровень', custom_id='level'))
+    if effect:
+        components.append(ShortText(label='Эффект', custom_id='effect'))
     modal = Modal(
         *components,
         title=title,
@@ -89,23 +223,23 @@ def name_description_modal(title, leleved=True):
 def to_embed(entity: Describable):
     base_embed = Embed()
     base_embed.title = entity.name
-    base_embed.add_field(entity_type_name(entity), value='')
+    base_embed.add_field(entity_type_name(entity), value=' ')
     base_embed.add_field('Описание', entity.description)
-    if entity.image:
-        base_embed.set_image(entity.image)
+    if entity.image_url:
+        base_embed.set_image(entity.image_url)
     if isinstance(entity, Character):
         base_embed.add_field('Характеристики',
                              f'\
-Сила: {entity.strength} ({(entity.strength - 10) / 2})\n\
-Ловкость: {entity.dexterity} ({(entity.dexterity - 10) / 2})\n\
-Телосложение: {entity.constitution} ({(entity.constitution - 10) / 2})\n\
-Интеллект: {entity.intelligence} ({(entity.intelligence - 10) / 2})\n\
-Мудрость: {entity.wisdom} ({(entity.wisdom - 10) / 2})\n\
-Харизма: {entity.charisma} ({(entity.charisma - 10) / 2})'
+Сила: {entity.strength} ({((entity.strength - 10) // 2)})\n\
+Ловкость: {entity.dexterity} ({(entity.dexterity - 10) // 2})\n\
+Телосложение: {entity.constitution} ({(entity.constitution - 10) // 2})\n\
+Интеллект: {entity.intelligence} ({(entity.intelligence - 10) // 2})\n\
+Мудрость: {entity.wisdom} ({(entity.wisdom - 10) // 2})\n\
+Харизма: {entity.charisma} ({(entity.charisma - 10) // 2})'
                              )
     if isinstance(entity, Item):
         base_embed.add_field('Масса', entity.bulk_txt)
-    if hasattr(entity,'effect'):
+    if hasattr(entity, 'effect'):
         base_embed.add_field('Эффект', entity.effect)
     return base_embed
 

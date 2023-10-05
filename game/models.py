@@ -2,12 +2,13 @@ from django.db import models
 from django.core.validators import MaxValueValidator, MinValueValidator, MinLengthValidator
 from django.utils.translation import gettext as _
 
+
 # Create your models here.
 
 class Describable(models.Model):
-    name = models.CharField(max_length=256, validators=[MinLengthValidator(2)])
+    name = models.CharField(max_length=256, validators=[MinLengthValidator(2)], unique=True)
     description = models.CharField(max_length=2000)
-    image = models.ImageField(null=True, blank=True)
+    image_url = models.CharField(max_length=2000, blank=True, null=True)
 
     class Meta:
         abstract = True
@@ -31,7 +32,6 @@ class Tag(Describable):
     pass
 
 
-
 class Character(Describable, Taggable):
     # For bot control
     discord_id = models.BigIntegerField(default=0, null=True, blank=True)
@@ -48,7 +48,7 @@ class Character(Describable, Taggable):
     heritage = models.ForeignKey('Heritage', null=True, on_delete=models.SET_NULL)
     # Class
     character_class = models.ForeignKey('Class', null=True, on_delete=models.SET_NULL)
-    level = models.PositiveIntegerField(default=1, validators=[MinValueValidator(1),MaxValueValidator(20)])
+    level = models.PositiveIntegerField(default=1, validators=[MinValueValidator(1), MaxValueValidator(20)])
     # Items
     inventory = models.ManyToManyField('Item', through='InventoryEntry', related_name='owners')
     equipment = models.ManyToManyField('Item', through='EquipmentEntry', related_name='wearers')
@@ -57,20 +57,19 @@ class Character(Describable, Taggable):
     # Spells
     spells = models.ManyToManyField('Spell')
     # Resources
-    hp = models.PositiveIntegerField()
-    max_hp = models.PositiveIntegerField()
+    hp = models.PositiveIntegerField(default=0)
+    max_hp = models.PositiveIntegerField(default=0)
 
-    focus_points = models.PositiveIntegerField()
-    max_focus= models.PositiveIntegerField()
+    focus_points = models.PositiveIntegerField(default=0)
+    max_focus = models.PositiveIntegerField(default=0)
 
-    hero_points = models.PositiveIntegerField()
-
-
+    hero_points = models.PositiveIntegerField(default=0)
 
 
 class Item(Describable, Effecting, Taggable):
     bulk = models.IntegerField(default=-1, validators=[MinValueValidator(-1)])
     level = models.PositiveIntegerField(default=0)
+
     @property
     def bulk_txt(self):
         if self.bulk == -1:
@@ -83,7 +82,7 @@ class Item(Describable, Effecting, Taggable):
     def txt_to_bulk(self, value: str):
         if value.startswith('-'):
             self.bulk = -1
-        if value.upper().startswith('L'):
+        elif value.upper().startswith('L'):
             self.bulk = 0
         else:
             pre_bulk = int(value)
@@ -92,10 +91,12 @@ class Item(Describable, Effecting, Taggable):
             else:
                 self.bulk = pre_bulk
 
+
 class InventoryEntry(models.Model):
     item = models.ForeignKey(Item, on_delete=models.CASCADE)
     character = models.ForeignKey(Character, on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField(default=1)
+
 
 class EquipmentEntry(models.Model):
     item = models.ForeignKey(Item, on_delete=models.CASCADE)
@@ -130,7 +131,7 @@ class SpellSlot(models.Model):
 
 
 class Ancestry(Describable, Effecting, Taggable):
-    tag = models.OneToOneField(Tag,  null=True, on_delete=models.SET_NULL, related_name='linked_ancestry')
+    tag = models.OneToOneField(Tag, null=True, on_delete=models.SET_NULL, related_name='linked_ancestry')
 
 
 class Background(Describable, Taggable, Effecting):
