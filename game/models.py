@@ -97,6 +97,14 @@ class InventoryEntry(models.Model):
     character = models.ForeignKey(Character, on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField(default=1)
 
+    def total_bulk_txt(self):
+        if self.item.bulk == -1:
+            return '-'
+        elif self.item.bulk == 0:
+            return f'{self.quantity//10} {self.quantity%10}L'
+        else:
+            return f'{self.quantity * self.item.bulk}'
+
 
 class EquipmentEntry(models.Model):
     item = models.ForeignKey(Item, on_delete=models.CASCADE)

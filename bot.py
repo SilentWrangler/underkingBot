@@ -7,7 +7,7 @@ from interactions import (Extension, OptionType, Modal, ShortText,
                           AutocompleteContext)
 from interactions.api.events import Startup, Component
 
-from game.models import Item, Describable, Character
+from game.models import Item, Describable, Character, InventoryEntry
 
 
 class CharacterExtension(Extension):
@@ -236,11 +236,95 @@ class CharacterExtension(Extension):
         autocomplete=True
     )
     async def view_character(self, ctx: SlashContext, name: str):
+        closed = False
+        desc_button = Button(label="Описание", disabled=True,style=ButtonStyle.BLUE, custom_id='desc')
+        inv_button = Button(label="Инвентарь", disabled=False,style=ButtonStyle.BLUE, custom_id='inv')
+        close_button = Button(label="Закрыть", style=ButtonStyle.RED, custom_id='exit')
         character = await sync_to_async(Character.objects.get)(name=name)
-        await ctx.send(embeds=[to_embed(character)])
+        msg = await ctx.send(embeds=[to_embed(character)], components=[ActionRow(desc_button, inv_button, close_button)])
+        inv_index = 0
+        while not closed:
+            comp = await self.bot.wait_for_component(msg)
+            if comp.ctx.custom_id=='exit':
+                closed = True
+                await comp.ctx.edit_origin(components=[])
+            elif comp.ctx.custom_id=='desc':
+                desc_button.disabled = True
+                inv_button.disabled = False
+                await comp.ctx.edit_origin(embeds=[to_embed(character)], components=[ActionRow(desc_button, inv_button, close_button)])
+            elif comp.ctx.custom_id=='inv':
+                desc_button.disabled = False
+                inv_button.disabled = True
+                embed = Embed(title=f'Инвентарь {character.name}')
+                items = await sync_to_async(list)(InventoryEntry.objects.filter(character=character))
+                for item in items:
+                    i = await sync_to_async(Item.objects.get)(inventoryentry=item)
+                    total_bulk = await sync_to_async(item.total_bulk_txt)()
+                    await sync_to_async(embed.add_field)(f'{i.name} x{item.quantity}', value=f'Масса {total_bulk}')
+                await comp.ctx.edit_origin(embeds=[embed], components=[ActionRow(desc_button, inv_button, close_button)])
+
+
+
+
+
+    @interactions.slash_command(
+        name='give',
+        group_description='Выдаёт сущности персонажу'
+    )
+    async def give(self, ctx: SlashContext):
+        await ctx.send('Выберите сущность для передачи!')
+
+    @give.subcommand(
+        sub_cmd_name='item'
+    )
+    @slash_option(
+        name='char_name',
+        description='Имя персонажа',
+        required=True,
+        opt_type=OptionType.STRING,
+        autocomplete=True
+    )
+    @slash_option(
+        name='item_name',
+        description='Имя предмета',
+        required=True,
+        opt_type=OptionType.STRING,
+        autocomplete=True
+    )
+    @slash_option(
+        name='quantity',
+        description='Количество',
+        required=False,
+        opt_type=OptionType.INTEGER
+    )
+    async def give_item(self, ctx:SlashContext, char_name: str, item_name: str, quantity: int = 1):
+        if quantity==0:
+            await ctx.send("Нельзя выдать или взять 0 вещей!", ephemeral=True)
+            return
+        item = await sync_to_async(Item.objects.get)(name=item_name)
+        character = await sync_to_async(Character.objects.get)(name=char_name)
+        present = await sync_to_async(InventoryEntry.objects.filter(item=item, character=character).exists)()
+        if present:
+            entry: InventoryEntry = await sync_to_async(character.inventory.get)(item=item)
+            entry.quantity += quantity
+            if quantity<0:
+                await ctx.send(f"У [{character.name}] взято  [{item.name}]x{-quantity}")
+                if entry.quantity<1:
+                    await sync_to_async(entry.delete)()
+            else:
+                await ctx.send(f"[{character.name}] выдано  [{item.name}]x{quantity}")
+                await sync_to_async(entry.save)()
+        else:
+            if quantity>0:
+                entry: InventoryEntry = InventoryEntry(character=character, item=item,quantity=quantity)
+                await ctx.send(f"[{character.name}] выдано  [{item.name}]x{quantity}")
+                await sync_to_async(entry.save)()
+            else:
+                await ctx.send(f"У {character.name} нет {item.name}!", ephemeral=True)
 
     @view_character.autocomplete("name")
     @edit_character.autocomplete('name')
+    @give_item.autocomplete('char_name')
     async def vc_autocomplete(self, ctx: AutocompleteContext):
         search = ctx.input_text
 
@@ -265,6 +349,7 @@ class CharacterExtension(Extension):
 
     @view_item.autocomplete('name')
     @edit_item.autocomplete('name')
+    @give_item.autocomplete('item_name')
     async def vi_autocomplete(self, ctx: AutocompleteContext):
         search = ctx.input_text
 
